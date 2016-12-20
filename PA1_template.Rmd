@@ -1,25 +1,66 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "PA1"
+output: html_document
 ---
+##Loading and preprocessing the data
+```{r Loading and preprocessing the data}
+setwd("C:/Users/marti/OneDrive/03_Data/01_Courses/Data Science Specialization/Reproducible research/Week 2/repdata%2Fdata%2Factivity")
+amd <- read.csv("activity.csv")
+amd$date <- as.Date(amd$date, "%Y-%m-%d")
+```
 
+##What is mean total number of steps taken per day?
+```{r total number of steps per day}
+dTotal <- tapply(amd$steps, amd$date, sum, na.rm = TRUE)
+par(mfrow = c(1,1), mar = c(3,3,3,3))
+hist(dTotal)
+dMean <- mean(dTotal)
+dMedian <- median(dTotal)
+```
 
-## Loading and preprocessing the data
+Mean of total number of steps per day is `r dMean` and meadeian of total number of steps per day is `r dMedian`.
 
+##What is the average daily activity pattern?
+```{r daily activity pattern}
+iMean <- tapply(amd$steps, amd$interval, mean, na.rm = TRUE)
+plot(names(iMean), iMean, type = "l")
+maxInterval <- names(iMean)[which.max(iMean)]
+```
 
+The interval with maximum average steps across all the days is `r maxInterval`
 
-## What is mean total number of steps taken per day?
+##Imputing missing values
+```{r}
+naCount <- sum(as.vector(apply(amd, 1, function(x) length(which(is.na(x))) != 0)))
+amdExtended <- amd 
+for (i in seq_len(nrow(amd))) {
+        if(is.na(amd$steps[i])){
+                
+                amdExtended$steps[i] <- mean(subset(amd, amd$interval == amd$interval[i])$steps, na.rm = TRUE)
+        }
+}
 
+dTotalExtended <- tapply(amd$steps, amd$date, sum, na.rm = TRUE)
+hist(dTotalExtended)
+dMeanExtended <- mean(dTotalExtended)
+dMedianExtended <- median(dTotalExtended)
+dMeanDiff <- dMean - dMeanExtended
+dMedianDiff <- dMedian - dMedianExtended
+```
 
+Total number of observations with missing values is `r naCount`.
+Missing values were inserted based on the mean of given interval across all days.
+the new mean of total number of steps per day is `r dMean` and meadeian of total number of steps per day is `r dMedian`.
+The replacement of missing values changed the total mean by `r dMeanDiff` and the tolal median by `r dMedianDiff`.
 
-## What is the average daily activity pattern?
+##Are there differences in activity patterns between weekdays and weekends?
+```{r}
+wd <- weekdays(amd$date) %in% c("Sunday", "Saturday")
+amdExtended$weekday <- wdPattern <- factor(wd, labels = c("week", "weekend"))
+amdExtendedSplit <- split(amdExtended, amdExtended$weekday)
+res <- lapply(amdExtendedSplit, function(x) tapply(x[,1], x[,3], mean))
+par(mfrow = c(1,2), mar = c(4,4,4,4))
+plot(names(res[[1]]), res[[1]], main = "Week", xlab = "interval", ylab = "Number of steps", type = "l")
+plot(names(res[[2]]), res[[2]], main = "Weekend", xlab = "interval", ylab = "Number of steps", type = "l")
+```
 
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
